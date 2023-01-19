@@ -21,13 +21,29 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
     uint256 public tokenMinted;
     address public crossmintAddress;
 
+    uint256 public constant FREE_TOKEN_START = 1;
+    uint256 public constant FREE_TOKEN_END = 30;
+    uint256 public constant PLATINUM_TOKEN_START = 31;
+    uint256 public constant PLATINUM_TOKEN_END = 70;
+    uint256 public constant GOLD_TOKEN_START = 71;
+    uint256 public constant GOLD_TOKEN_END = 100;
+
+    uint256 public freeTokenCounter = 1;
+    uint256 public platinumTokenCounter = 31;
+    uint256 public goldTokenCounter = 71;
+
+    uint256 public freeTokenPrice = 0 ether;
+    uint256 public platinumTokenPrice = 1 ether;
+    uint256 public goldTokenPrice = 3 ether;
+    
+    uint256 public MAX_SUPPLY = 100;
+    uint256 public MINT_PER_TXT = 5; // Mint per Transaction
     bool public publicSaleLive = true;
+    
 
-    uint256 public MAX_SUPPLY = 112171;
-    uint256 public MINT_PER_TXT = 100; // Mint per Transaction
-    uint256 public price = 199 ether;
-
-    event Minted(address indexed to, uint256 tokenQuantity, uint256 amountTransfered, string _type);
+    event FreeTokenMinted(address indexed to, uint256 tokenId, uint256 amountTransfered);
+    event PlatinumTokenMinted(address indexed to, uint256 tokenId, uint256 amountTransfered);
+    event GoldTokenMinted(address indexed to, uint256 tokenId, uint256 amountTransfered);
     
     constructor() ERC721("NUSIC Access NFT", "NUA") {
         defaultURI = "https://bafkreigj4ynovugfqsewvfgche6ql5gozlox7p5cjfiw7uelfscfbk3keu.ipfs.nftstorage.link/";
@@ -56,9 +72,20 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         publicSaleLive = !publicSaleLive;
     }
 
-    function setPrice(uint256 newPrice) public onlyOwnerOrManager {
-        require(newPrice > 0, "Price can not be zero");
-        price = newPrice;
+/*
+    function setFreeTokenPrice(uint256 _freeTokenPrice) public onlyOwnerOrManager {
+        require(_freeTokenPrice > 0, "Price can not be zero");
+        freeTokenPrice = _freeTokenPrice;
+    }
+*/    
+    function setPlatinumTokenPrice(uint256 _platinumTokenPrice) public onlyOwnerOrManager {
+        require(_platinumTokenPrice > 0, "Price can not be zero");
+        platinumTokenPrice = _platinumTokenPrice;
+    }
+
+    function setGoldTokenPrice(uint256 _goldTokenPrice) public onlyOwnerOrManager {
+        require(_goldTokenPrice > 0, "Price can not be zero");
+        goldTokenPrice = _goldTokenPrice;
     }
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
@@ -87,38 +114,69 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         MINT_PER_TXT = _mintPerTxt;
     }
 
-    function crossMint(address _to, uint256 tokenQuantity) public payable whenNotPaused {
+    function freeTokenMint(address _to, uint256 tokenQuantity) public payable whenNotPaused {
         require(msg.sender == crossmintAddress,"This function is for Crossmint only.");
         // polygon mainnet = 0x12A80DAEaf8E7D646c4adfc4B107A2f1414E2002
         // polygon mumbai  = 0xDa30ee0788276c093e686780C25f6C9431027234  
-
-        require(publicSaleLive, "Public Sale Closed"); // Public Sale Should be active
         require(tokenQuantity <= MINT_PER_TXT, 'Exceed Per Txt limit');
         require(totalSupply() < MAX_SUPPLY, "All tokens have been minted");
+
+        require(freeTokenCounter >= FREE_TOKEN_START && freeTokenCounter <= FREE_TOKEN_END, "All tokens have been minted");
+        require((freeTokenCounter + tokenQuantity) >= FREE_TOKEN_START && (freeTokenCounter + tokenQuantity) <= FREE_TOKEN_END, "All tokens have been minted");
+        
         require(totalSupply() + tokenQuantity <= MAX_SUPPLY, "Minting would exceed max supply"); // Total Minted should not exceed Max Supply
-        require((price * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
+        require((freeTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
 
         for(uint256 i=0; i<tokenQuantity; i++) {
-            tokenMinted++;// if want to start with zero than remove then use prefix ++
-            _safeMint(_to, tokenMinted); 
-            emit Minted(_to, tokenQuantity, msg.value, "CrossMint");
+            _safeMint(_to, freeTokenCounter); 
+            emit FreeTokenMinted(_to, freeTokenCounter, msg.value);
+            freeTokenCounter++;
+            tokenMinted++;
         }
     }
 
-    function mint(uint256 tokenQuantity) public payable whenNotPaused{
-        require(publicSaleLive, "Public Sale Closed"); // Public Sale Should be active
+    function platinumTokenMint(address _to, uint256 tokenQuantity) public payable whenNotPaused {
+        require(msg.sender == crossmintAddress,"This function is for Crossmint only.");
+        // polygon mainnet = 0x12A80DAEaf8E7D646c4adfc4B107A2f1414E2002
+        // polygon mumbai  = 0xDa30ee0788276c093e686780C25f6C9431027234  
         require(tokenQuantity <= MINT_PER_TXT, 'Exceed Per Txt limit');
         require(totalSupply() < MAX_SUPPLY, "All tokens have been minted");
+
+        require(platinumTokenCounter >= PLATINUM_TOKEN_START && platinumTokenCounter <= PLATINUM_TOKEN_END, "All tokens have been minted");
+        require((platinumTokenCounter + tokenQuantity) >= PLATINUM_TOKEN_START && (platinumTokenCounter + tokenQuantity) <= PLATINUM_TOKEN_END, "All tokens have been minted");
+        
         require(totalSupply() + tokenQuantity <= MAX_SUPPLY, "Minting would exceed max supply"); // Total Minted should not exceed Max Supply
-        require((price * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
+        require((platinumTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
 
         for(uint256 i=0; i<tokenQuantity; i++) {
-            tokenMinted++;// if want to start with zero than remove then use prefix ++
-            _safeMint(msg.sender, tokenMinted); 
-            emit Minted(msg.sender, tokenQuantity, msg.value, "CryptoNative");
+            _safeMint(_to, platinumTokenCounter); 
+            emit PlatinumTokenMinted(_to, platinumTokenCounter, msg.value);
+            platinumTokenCounter++;
+            tokenMinted++;
         }
     }
 
+    function goldTokenMint(address _to, uint256 tokenQuantity) public payable whenNotPaused {
+        require(msg.sender == crossmintAddress,"This function is for Crossmint only.");
+        // polygon mainnet = 0x12A80DAEaf8E7D646c4adfc4B107A2f1414E2002
+        // polygon mumbai  = 0xDa30ee0788276c093e686780C25f6C9431027234  
+        require(tokenQuantity <= MINT_PER_TXT, 'Exceed Per Txt limit');
+        require(totalSupply() < MAX_SUPPLY, "All tokens have been minted");
+
+        require(goldTokenCounter >= GOLD_TOKEN_START && goldTokenCounter <= GOLD_TOKEN_END, "All tokens have been minted");
+        require((goldTokenCounter + tokenQuantity) >= GOLD_TOKEN_START && (platinumTokenCounter + tokenQuantity) <= GOLD_TOKEN_END, "All tokens have been minted");
+        
+        require(totalSupply() + tokenQuantity <= MAX_SUPPLY, "Minting would exceed max supply"); // Total Minted should not exceed Max Supply
+        require((goldTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
+
+        for(uint256 i=0; i<tokenQuantity; i++) {
+            _safeMint(_to, goldTokenCounter); 
+            emit GoldTokenMinted(_to, tokenQuantity, msg.value);
+            goldTokenCounter++;
+            tokenMinted++;
+        }
+    }
+        
     function totalSupply() public view returns(uint256) {
         return tokenMinted;
     }
