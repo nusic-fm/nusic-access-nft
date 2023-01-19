@@ -10,7 +10,8 @@ async function main() {
   const NusicAccessNFT:NusicAccessNFT__factory =  await ethers.getContractFactory("NusicAccessNFT");
   
   // Using address for localhost
-  const nusicAccessNFT:NusicAccessNFT = await NusicAccessNFT.deploy();
+  //const nusicAccessNFT:NusicAccessNFT = await NusicAccessNFT.deploy("NUSIC Access NFT", "NUA");
+  const nusicAccessNFT:NusicAccessNFT = await NusicAccessNFT.deploy("Access Demo", "ACD");
 
   await nusicAccessNFT.deployed(); 
   console.log("NusicAccessNFT deployed to:", nusicAccessNFT.address);
