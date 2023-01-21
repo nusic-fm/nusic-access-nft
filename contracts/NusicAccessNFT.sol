@@ -16,6 +16,10 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
     string public defaultURI;
     string public baseURI;
 
+    string public platinumDefaultURI = "https://gateway.pinata.cloud/ipfs/QmdjqFCk6tRHSfkZpmv7MQ4oKM6BfRQ67gDRrFD6HdxakQ/platinum.json";
+    string public goldDefaultURI = "https://gateway.pinata.cloud/ipfs/QmdjqFCk6tRHSfkZpmv7MQ4oKM6BfRQ67gDRrFD6HdxakQ/gold.json";
+    string public vipDefaultURI = "https://gateway.pinata.cloud/ipfs/QmdjqFCk6tRHSfkZpmv7MQ4oKM6BfRQ67gDRrFD6HdxakQ/vip.json";
+
     address public treasuryAddress;
     address public managerAddress;
     uint256 public tokenMinted;
@@ -32,25 +36,27 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
     uint256 public goldTokenCounter = 16;
     uint256 public vipTokenCounter = 56;
     
-    uint256 public platinumTokenPrice = 0.0001 ether;
+    uint256 public minimumPlatinumTokenPrice = 0.0001 ether;
     uint256 public goldTokenPrice = 0.00001 ether;
-    uint256 public vipTokenPrice = 0 ether;
+    uint256 public vipTokenPrice = 0.000001 ether;
     
     uint256 public MAX_SUPPLY = 120;
     uint256 public MINT_PER_TXT = 5; // Mint per Transaction
     bool public publicSaleLive = true;
     bool public revealed = false;
 
+
+
     event PlatinumTokenMinted(address indexed to, uint256 tokenId, uint256 amountTransfered, string _type);
     event GoldTokenMinted(address indexed to, uint256 tokenId, uint256 amountTransfered, string _type);
     event VIPTokenMinted(address indexed to, uint256 tokenId, uint256 amountTransfered, string _type);
     
     constructor(string memory name_, string memory symbol_) ERC721(name_, symbol_) {
-        defaultURI = "https://bafkreigj4ynovugfqsewvfgche6ql5gozlox7p5cjfiw7uelfscfbk3keu.ipfs.nftstorage.link/";
         // treasuryAddress = 0x7037a3B32A68d532318c94243ba3145435f7a300; // polygon mainnet
         treasuryAddress = msg.sender;
         //crossmintAddress = 0x12A80DAEaf8E7D646c4adfc4B107A2f1414E2002; // polygon mainnet
         crossmintAddress = 0xDa30ee0788276c093e686780C25f6C9431027234;
+        managerAddress = 0x07C920eA4A1aa50c8bE40c910d7c4981D135272B; 
     }
     
     modifier onlyOwnerOrManager() {
@@ -78,9 +84,9 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         revealed = !revealed;
     }
     
-    function setPlatinumTokenPrice(uint256 _platinumTokenPrice) public onlyOwnerOrManager {
-        require(_platinumTokenPrice > 0, "Price can not be zero");
-        platinumTokenPrice = _platinumTokenPrice;
+    function setMinimumPlatinumTokenPrice(uint256 _minimumPlatinumTokenPrice) public onlyOwnerOrManager {
+        require(_minimumPlatinumTokenPrice > 0, "Price can not be zero");
+        minimumPlatinumTokenPrice = _minimumPlatinumTokenPrice;
     }
 
     function setGoldTokenPrice(uint256 _goldTokenPrice) public onlyOwnerOrManager {
@@ -88,7 +94,7 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         goldTokenPrice = _goldTokenPrice;
     }
 
-    function setBasicTokenPrice(uint256 _vipTokenPrice) public onlyOwnerOrManager {
+    function setVipTokenPrice(uint256 _vipTokenPrice) public onlyOwnerOrManager {
         require(_vipTokenPrice > 0, "Price can not be zero");
         vipTokenPrice = _vipTokenPrice;
     }
@@ -96,9 +102,17 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "Token does not exists");
         if(revealed == false) {
-            return defaultURI;
+            if(tokenId >= PLATINUM_TOKEN_START && tokenId <= PLATINUM_TOKEN_END) {
+                return platinumDefaultURI;
+            }
+            else if(tokenId >= GOLD_TOKEN_START && tokenId <= GOLD_TOKEN_END) {
+                return goldDefaultURI;
+            }
+            else {
+                return vipDefaultURI;
+            }
         }
-        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString(),".json")) : defaultURI;
+        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString(),".json")) : "";
     }
 
     function setManager(address _manager) public onlyOwner{
@@ -133,7 +147,8 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         require((platinumTokenCounter + tokenQuantity) >= PLATINUM_TOKEN_START && (platinumTokenCounter + tokenQuantity) <= PLATINUM_TOKEN_END, "All Platinum tokens have been minted");
         
         require(totalSupply() + tokenQuantity <= MAX_SUPPLY, "Minting would exceed max supply"); // Total Minted should not exceed Max Supply
-        require((platinumTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
+        //require((minimumPlatinumTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
+        require(msg.value >= (minimumPlatinumTokenPrice * tokenQuantity), "Insufficient Funds Sent" );
 
         for(uint256 i=0; i<tokenQuantity; i++) {
             _safeMint(_to, platinumTokenCounter); 
@@ -154,7 +169,8 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         require((platinumTokenCounter + tokenQuantity) >= PLATINUM_TOKEN_START && (platinumTokenCounter + tokenQuantity) <= PLATINUM_TOKEN_END, "All Platinum tokens have been minted");
         
         require(totalSupply() + tokenQuantity <= MAX_SUPPLY, "Minting would exceed max supply"); // Total Minted should not exceed Max Supply
-        require((platinumTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
+        //require((minimumPlatinumTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
+        require(msg.value >= (minimumPlatinumTokenPrice * tokenQuantity), "Insufficient Funds Sent" );
 
         for(uint256 i=0; i<tokenQuantity; i++) {
             _safeMint(_to, platinumTokenCounter); 
@@ -172,7 +188,7 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         require(totalSupply() < MAX_SUPPLY, "All tokens have been minted");
 
         require(goldTokenCounter >= GOLD_TOKEN_START && goldTokenCounter <= GOLD_TOKEN_END, "All Gold tokens have been minted");
-        require((goldTokenCounter + tokenQuantity) >= GOLD_TOKEN_START && (platinumTokenCounter + tokenQuantity) <= GOLD_TOKEN_END, "All Gold tokens have been minted");
+        require((goldTokenCounter + tokenQuantity) >= GOLD_TOKEN_START && (goldTokenCounter + tokenQuantity) <= GOLD_TOKEN_END, "All Gold tokens have been minted");
         
         require(totalSupply() + tokenQuantity <= MAX_SUPPLY, "Minting would exceed max supply"); // Total Minted should not exceed Max Supply
         require((goldTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
@@ -193,7 +209,7 @@ contract NusicAccessNFT is Ownable, ERC721Pausable {
         require(totalSupply() < MAX_SUPPLY, "All tokens have been minted");
 
         require(goldTokenCounter >= GOLD_TOKEN_START && goldTokenCounter <= GOLD_TOKEN_END, "All Gold tokens have been minted");
-        require((goldTokenCounter + tokenQuantity) >= GOLD_TOKEN_START && (platinumTokenCounter + tokenQuantity) <= GOLD_TOKEN_END, "All Gold tokens have been minted");
+        require((goldTokenCounter + tokenQuantity) >= GOLD_TOKEN_START && (goldTokenCounter + tokenQuantity) <= GOLD_TOKEN_END, "All Gold tokens have been minted");
         
         require(totalSupply() + tokenQuantity <= MAX_SUPPLY, "Minting would exceed max supply"); // Total Minted should not exceed Max Supply
         require((goldTokenPrice * tokenQuantity) == msg.value, "Insufficient Funds Sent" ); // Amount sent should be equal to price to quantity being minted
