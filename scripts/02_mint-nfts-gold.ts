@@ -14,9 +14,10 @@ async function main() {
   const nusicAccessNFT:NusicAccessNFT = await NusicAccessNFT.attach(network.nusicAccessNFT);
   console.log("NusicAccessNFT Address:", nusicAccessNFT.address);
 
-
-  const txt = await nusicAccessNFT.connect(owner).goldTokenCrossMint(owner.address,2, {value: ethers.utils.parseEther("6")});
-  //const txt = await littleHaitiNFT.crossMint(owner.address,1, {value: ethers.utils.parseEther("199")});
+  const numberOfTokens = 5
+  const tokenPrice = (ethers.utils.parseEther("2")).mul(numberOfTokens);
+  const txt = await nusicAccessNFT.connect(owner).goldTokenCrossMint(owner.address,numberOfTokens, {value: tokenPrice});
+  const txt1 = await nusicAccessNFT.connect(owner).goldTokenNativeMint(owner.address,numberOfTokens, {value: tokenPrice});
   console.log("nusicAccessNFT.goldTokenMint txt.hash = ",txt.hash);
   const txtReceipt = await txt.wait();
   //console.log("txtReceipt = ",txtReceipt); 
